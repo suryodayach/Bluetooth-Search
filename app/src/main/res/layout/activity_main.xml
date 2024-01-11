@@ -9,14 +9,16 @@
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view_devices"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             tools:itemCount="3"
-            tools:listitem="@layout/device_item"/>
+            tools:listitem="@layout/device_item" />
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 

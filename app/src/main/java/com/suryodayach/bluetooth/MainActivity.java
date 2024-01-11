@@ -4,12 +4,14 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.Manifest;
 import android.bluetooth.BluetoothDevice;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,7 +21,9 @@ import com.suryodayach.bluetooth.adapter.BluetoothDeviceAdapter;
 import com.suryodayach.bluetooth.model.Device;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -62,8 +66,18 @@ public class MainActivity extends AppCompatActivity {
         swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
         recyclerView = findViewById(R.id.recycler_view_devices);
         adapter = new BluetoothDeviceAdapter();
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(adapter);
+
+        DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(recyclerView.getContext(), layoutManager.getOrientation());
+        recyclerView.addItemDecoration(dividerItemDecoration);
+
+        adapter.setOnDeviceClickListener(device -> {
+            Intent detailsIntent = new Intent(this, DeviceDetailsActivity.class);
+            detailsIntent.putExtra("DeviceAddress", device.getAddress());
+            startActivity(detailsIntent);
+        });
     }
 
     @Override
@@ -72,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (checkAndRequestPermissions()) {
             bluetoothViewModel.getDiscoveredDevices().observe(this, devices -> {
+                Log.e(TAG, "onResume: " + devices );
                 swipeRefreshLayout.setRefreshing(false);
                 updateDeviceList(devices);
             });
@@ -81,10 +96,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateDeviceList(List<BluetoothDevice> devices) {
+        Set<String> uniqueAddresses = new HashSet<>();
         List<Device> updatedDevices = new ArrayList<>();
+
         for (BluetoothDevice device : devices) {
-            updatedDevices.add(new Device(device.getAddress(), device.getName()));
+            String address = device.getAddress();
+
+            // Check if the address is unique
+            if (!uniqueAddresses.contains(address)) {
+                uniqueAddresses.add(address);
+                updatedDevices.add(new Device(address, device.getName()));
+            }
         }
+
         adapter.submitList(updatedDevices);
     }
 

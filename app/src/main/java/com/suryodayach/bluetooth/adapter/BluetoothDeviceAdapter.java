@@ -15,6 +15,16 @@ import com.suryodayach.bluetooth.R;
 
 public class BluetoothDeviceAdapter extends ListAdapter<Device, BluetoothDeviceAdapter.DeviceHolder> {
 
+    private OnDeviceClickListener onDeviceClickListener;
+
+    public interface OnDeviceClickListener {
+        void onDeviceClick(Device device);
+    }
+
+    public void setOnDeviceClickListener(OnDeviceClickListener listener) {
+        this.onDeviceClickListener = listener;
+    }
+
     public BluetoothDeviceAdapter() {
         super(DIFF_CALLBACK);
     }
@@ -43,6 +53,12 @@ public class BluetoothDeviceAdapter extends ListAdapter<Device, BluetoothDeviceA
         final Device device = getItem(position);
         holder.address.setText(device.getAddress());
         holder.deviceName.setText(device.getName());
+
+        holder.itemView.setOnClickListener(view -> {
+            if (onDeviceClickListener != null) {
+                onDeviceClickListener.onDeviceClick(device);
+            }
+        });
     }
 
     public class DeviceHolder extends RecyclerView.ViewHolder {
