@@ -6,6 +6,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.Manifest;
 import android.bluetooth.BluetoothDevice;
@@ -26,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothViewModel bluetoothViewModel;
     BluetoothDeviceAdapter adapter;
     RecyclerView recyclerView;
+    SwipeRefreshLayout swipeRefreshLayout;
     private String[] permissions = new String[]{
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -41,33 +43,63 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        initUI();
+
+        checkAndRequestPermissions();
+
+        bluetoothViewModel = new ViewModelProvider(this).get(BluetoothViewModel.class);
+
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            if (checkAndRequestPermissions()) {
+                bluetoothViewModel.refreshDevices();
+            } else {
+                Toast.makeText(getApplicationContext(), "Please Grant Permissions", Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void initUI() {
+        swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
         recyclerView = findViewById(R.id.recycler_view_devices);
         adapter = new BluetoothDeviceAdapter();
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
-
-        if (!checkIfAlreadyHavePermission()) {
-            ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE);
-        }
-
-        bluetoothViewModel = new ViewModelProvider(this).get(BluetoothViewModel.class);
-
-        bluetoothViewModel.getDiscoveredDevices().observe(this, devices -> {
-            Log.d(TAG, "onCreate: Discovered Devices: " + devices);
-            List<Device> updatedDevices = new ArrayList<>();
-            for (BluetoothDevice device: devices) {
-                updatedDevices.add(new Device(device.getAddress(), device.getName()));
-            }
-            adapter.submitList(updatedDevices);
-        });
-
-        bluetoothViewModel.startDiscovery();
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (checkAndRequestPermissions()) {
+            bluetoothViewModel.getDiscoveredDevices().observe(this, devices -> {
+                swipeRefreshLayout.setRefreshing(false);
+                updateDeviceList(devices);
+            });
+
+            bluetoothViewModel.startDiscovery();
+        }
+    }
+
+    private void updateDeviceList(List<BluetoothDevice> devices) {
+        List<Device> updatedDevices = new ArrayList<>();
+        for (BluetoothDevice device : devices) {
+            updatedDevices.add(new Device(device.getAddress(), device.getName()));
+        }
+        adapter.submitList(updatedDevices);
+    }
+
+        @Override
     protected void onDestroy() {
         super.onDestroy();
         bluetoothViewModel.stopDiscovery();
+    }
+
+    private boolean checkAndRequestPermissions() {
+        if (!checkIfAlreadyHavePermission()) {
+            ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE);
+            return false;
+        }
+        return true;
     }
 
     boolean checkIfAlreadyHavePermission() {

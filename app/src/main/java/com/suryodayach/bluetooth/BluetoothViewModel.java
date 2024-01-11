@@ -15,7 +15,7 @@ import java.util.List;
 public class BluetoothViewModel extends AndroidViewModel {
 
     private final BluetoothRepository bluetoothRepository;
-    private LiveData<List<BluetoothDevice>> discoveredDevices = new MutableLiveData<>();
+    LiveData<List<BluetoothDevice>> discoveredDevices = new MutableLiveData<>();
 
     public BluetoothViewModel(@NonNull Application application) {
         super(application);
@@ -27,6 +27,10 @@ public class BluetoothViewModel extends AndroidViewModel {
             discoveredDevices = bluetoothRepository.getDiscoveredDevices();
         }
         return discoveredDevices;
+    }
+
+    public void refreshDevices() {
+        bluetoothRepository.refreshDevices();
     }
 
     public void startDiscovery() {
