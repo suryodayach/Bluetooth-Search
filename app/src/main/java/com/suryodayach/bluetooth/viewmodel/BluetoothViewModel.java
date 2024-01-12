@@ -1,4 +1,4 @@
-package com.suryodayach.bluetooth;
+package com.suryodayach.bluetooth.viewmodel;
 
 import android.app.Application;
 import android.bluetooth.BluetoothDevice;

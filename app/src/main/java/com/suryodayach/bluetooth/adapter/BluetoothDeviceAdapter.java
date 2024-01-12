@@ -10,12 +10,18 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.suryodayach.bluetooth.model.FilterOptions;
 import com.suryodayach.bluetooth.model.Device;
 import com.suryodayach.bluetooth.R;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BluetoothDeviceAdapter extends ListAdapter<Device, BluetoothDeviceAdapter.DeviceHolder> {
 
     private OnDeviceClickListener onDeviceClickListener;
+    private List<Device> deviceList = new ArrayList<>();
+    private FilterOptions filterOptions;
 
     public interface OnDeviceClickListener {
         void onDeviceClick(Device device);
@@ -25,8 +31,17 @@ public class BluetoothDeviceAdapter extends ListAdapter<Device, BluetoothDeviceA
         this.onDeviceClickListener = listener;
     }
 
+    public void setOriginalList(List<Device> originalList) {
+        this.deviceList = originalList;
+    }
+
+    public void setEmptyOriginalList() {
+        this.deviceList = new ArrayList<>();
+    }
+
     public BluetoothDeviceAdapter() {
         super(DIFF_CALLBACK);
+        filterOptions = new FilterOptions();
     }
 
     public static final DiffUtil.ItemCallback<Device> DIFF_CALLBACK = new DiffUtil.ItemCallback<Device>() {
@@ -69,5 +84,36 @@ public class BluetoothDeviceAdapter extends ListAdapter<Device, BluetoothDeviceA
             address = itemView.findViewById(R.id.text_view_address);
             deviceName = itemView.findViewById(R.id.text_view_name);
         }
+    }
+
+    public void setFilterOptions(FilterOptions options) {
+        filterOptions = options;
+        applyFilter();
+    }
+
+    private void applyFilter() {
+        if (deviceList == null) {
+            return;
+        }
+
+        List<Device> filteredList = new ArrayList<>();
+        for (Device device : deviceList) {
+            // Check if the device type matches the selected types
+            boolean typeMatches = filterOptions.getSelectedTypes().isEmpty()
+                    || filterOptions.getSelectedTypes().contains(device.getType());
+
+            // Check if the paired status matches the selected paired status
+            boolean pairedStatusMatches = filterOptions.getSelectedPairedStatus() == null
+                    || filterOptions.getSelectedPairedStatus().equals("All")
+                    || (filterOptions.getSelectedPairedStatus().equals("Paired") && device.getPairedStatus().equals("Paired"))
+                    || (filterOptions.getSelectedPairedStatus().equals("Unpaired") && device.getPairedStatus().equals("Unpaired"));
+
+            // Adding the device to the filtered list if both type and paired status match,
+            if (typeMatches && pairedStatusMatches) {
+                filteredList.add(device);
+            }
+
+        }
+        submitList(filteredList);
     }
 }

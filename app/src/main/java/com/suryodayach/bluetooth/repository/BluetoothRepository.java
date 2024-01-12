@@ -47,6 +47,7 @@ public class BluetoothRepository {
         }
     };
 
+    // Starting Search for the Bluetooth Devices
     public void startDiscovery() {
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         applicationContext.registerReceiver(receiver, filter);
@@ -59,6 +60,7 @@ public class BluetoothRepository {
         }
     }
 
+    // Refreshing the Bluetooth Devices list
     public void refreshDevices() {
         if (bluetoothAdapter != null) {
             if (ActivityCompat.checkSelfPermission(applicationContext, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
@@ -71,11 +73,14 @@ public class BluetoothRepository {
         }
     }
 
+    // Stops and unregister the receiver
     public void stopDiscovery() {
         if (ActivityCompat.checkSelfPermission(applicationContext, android.Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
         bluetoothAdapter.cancelDiscovery();
+        discoveredDevices = new ArrayList<>();
+        discoveredDevicesLiveData.setValue(discoveredDevices);
         try {
             applicationContext.unregisterReceiver(receiver);
         } catch (IllegalArgumentException e) {

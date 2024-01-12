@@ -1,4 +1,4 @@
-package com.suryodayach.bluetooth;
+package com.suryodayach.bluetooth.utils;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -6,10 +6,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.util.Log;
-
-import androidx.core.app.ActivityCompat;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -20,6 +17,7 @@ public class BluetoothDeviceManager {
     private static final UUID UUID_SSP = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private final BluetoothAdapter bluetoothAdapter;
     private Context context;
+    private BluetoothSocket socket;
 
 
     public BluetoothDeviceManager(Context context) {
@@ -27,6 +25,7 @@ public class BluetoothDeviceManager {
         this.context = context;
     }
 
+    // Gets BluetoothDevice using device address
     public BluetoothDevice getDeviceByAddress(String deviceAddress) {
         if (bluetoothAdapter == null || !BluetoothAdapter.checkBluetoothAddress(deviceAddress)) {
             return null;
@@ -34,9 +33,10 @@ public class BluetoothDeviceManager {
         return bluetoothAdapter.getRemoteDevice(deviceAddress);
     }
 
+    // Connect to the Bluetooth device
     public BluetoothSocket connectToDevice(BluetoothDevice device) {
         try {
-            BluetoothSocket socket = device.createRfcommSocketToServiceRecord(UUID_SSP);
+            socket = device.createRfcommSocketToServiceRecord(UUID_SSP);
             socket.connect();
             return socket;
         } catch (IOException e) {
@@ -45,40 +45,29 @@ public class BluetoothDeviceManager {
         }
     }
 
+    // Get Signal Strength of Bluetooth Device
+
     public int getSignalStrength(BluetoothDevice device) {
         if (bluetoothAdapter == null || device == null) {
-            return -1; // Indicate an error or invalid input
+            return -1;
         }
         BluetoothGatt bluetoothGatt = device.connectGatt(context, false, new BluetoothGattCallback() {
             @Override
             public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
                 super.onReadRemoteRssi(gatt, rssi, status);
-                // Use the 'rssi' value as the signal strength
                 Log.d("BluetoothSignalStrength", "RSSI: " + rssi);
             }
         });
 
-        // Trigger reading RSSI
         bluetoothGatt.readRemoteRssi();
 
-        return -1; // Default value, indicating that the method might not provide real-time signal strength
+        return -1;
     }
 
-    public String getPairingStatus(BluetoothDevice device) {
-        if (device == null) {
-            return "No";
-        }
-
-        int bondState = device.getBondState();
-        if (bondState == BluetoothDevice.BOND_BONDED) {
-            return "Yes";
-        }
-        return "No";
-    }
-
+    // Pair the device
     public boolean pairDevice(BluetoothDevice device) {
         if (device == null) {
-            return false; // Indicate an error or invalid input
+            return false;
         }
 
         // Initiate pairing if the device is not bonded,
@@ -95,4 +84,21 @@ public class BluetoothDeviceManager {
             return true;
         }
     }
+
+    // Unpair Device
+    public boolean unpairDevice(BluetoothDevice device) {
+        if (device == null) {
+            return false;
+        }
+
+        try {
+            Method method = device.getClass().getMethod("removeBond");
+            return (boolean) method.invoke(device);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
 }
